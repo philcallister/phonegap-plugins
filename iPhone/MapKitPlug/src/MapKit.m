@@ -20,8 +20,8 @@
 
 -(PhoneGapCommand*) initWithWebView:(UIWebView*)theWebView
 {
-    self = (MapKitView*)[super initWithWebView:theWebView];
-    return self;
+  self = (MapKitView*)[super initWithWebView:theWebView];
+  return self;
 }
 
 /**
@@ -30,12 +30,12 @@
 - (void)createView
 {
 	childView = [[UIView alloc] init];
-    mapView = [[MKMapView alloc] init];
-    [mapView sizeToFit];
-    mapView.delegate = self;
-    mapView.multipleTouchEnabled   = YES;
-    mapView.autoresizesSubviews    = YES;
-    mapView.userInteractionEnabled = YES;
+  mapView = [[MKMapView alloc] init];
+  [mapView sizeToFit];
+  mapView.delegate = self;
+  mapView.multipleTouchEnabled   = YES;
+  mapView.autoresizesSubviews    = YES;
+  mapView.userInteractionEnabled = YES;
 	mapView.showsUserLocation = YES;
 	
 	imageButton = [UIButton buttonWithType:UIButtonTypeCustom];
@@ -74,8 +74,9 @@
  * Set annotations and mapview settings
  */
 - (void)setMapData:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options
-{	
-    if (!mapView) 
+{
+	// map creation
+  if (!mapView) 
 	{
 		[self createView];
 	}
@@ -84,63 +85,41 @@
 		[mapView removeAnnotations:mapView.annotations];
 	}
 	
-	// default height
-    CGFloat height = 480.0f;
-	// default at bottom
-    BOOL atBottom = YES;
+  // offset from top
+  CGFloat offsetTop = 0.0f;
+  // offset from bottom
+  CGFloat offsetBottom = 0.0f;
+  // close button
+  BOOL buttonClose = YES;
+  // show all annotations
+  BOOL showAllAnnotations = NO;
 	
-    NSArray *pins = [[NSArray alloc] init];
-	
-	if ([options objectForKey:@"height"]) 
-	{
-		height=[[options objectForKey:@"height"] floatValue];
-	}
-    if ([options objectForKey:@"atBottom"]) 
-	{
-		atBottom=[[options objectForKey:@"position"] isEqualToString:@"bottom"];
-	}
-	if ([options objectForKey:@"buttonCallback"]) 
+	if ([options objectForKey:@"buttonCallback"])
 	{
 		self.buttonCallback=[[options objectForKey:@"buttonCallback"] description];
 	}
-	
-	CLLocationCoordinate2D centerCoord = { [[options objectForKey:@"lat"] floatValue] , [[options objectForKey:@"lon"] floatValue] };
+  if ([options objectForKey:@"buttonClose"])
+  {
+    buttonClose=[[options objectForKey:@"buttonClose"] boolValue];
+  }
+  if ([options objectForKey:@"offsetTop"])
+  {
+    offsetTop=[[options objectForKey:@"offsetTop"] floatValue];
+  }
+  if ([options objectForKey:@"offsetBottom"])
+  {
+    offsetBottom=[[options objectForKey:@"offsetBottom"] floatValue];
+  }
 	CLLocationDistance diameter = [[options objectForKey:@"diameter"] floatValue];
+  if (diameter == 0)
+  {
+    showAllAnnotations = YES;
+  }
 	
-	
+  // add annotations
+  NSArray *pins = [[NSArray alloc] init];
 	SBJSON *parser=[[SBJSON alloc] init];
 	pins = [parser objectWithString:[arguments objectAtIndex:0]];
-	
-	CGRect webViewBounds = webView.bounds;
-	
-	CGRect mapBounds;
-	if (atBottom) 
-	{
-         mapBounds = CGRectMake(
-             webViewBounds.origin.x,
-             webViewBounds.origin.y + webViewBounds.size.height - height,
-             webViewBounds.size.width,
-             height
-         );
-	}
-	else 
-	{
-         mapBounds = CGRectMake(
-             webViewBounds.origin.x,
-             webViewBounds.origin.y,
-             webViewBounds.size.width,
-             webViewBounds.origin.y + height
-         );
-	}
-	
-	[childView setFrame:mapBounds];
-	[mapView setFrame:mapBounds];
-	
-	MKCoordinateRegion region=[ mapView regionThatFits: MKCoordinateRegionMakeWithDistance(centerCoord, 
-																						   diameter*(height / webViewBounds.size.width), 
-																						   diameter*(height / webViewBounds.size.width))];
-	[mapView setRegion:region animated:YES];
-	
 	for (int y = 0; y < pins.count; y++) 
 	{
 		NSDictionary *pinData = [pins objectAtIndex:y];
@@ -160,17 +139,62 @@
 		[annotation release];
 	}
 	
-	CGRect frame = CGRectMake(285.0,12.0,  29.0, 29.0);
+  // show map close button?
+  if (buttonClose)
+  {
+    CGRect frame = CGRectMake(285.0,12.0 + offsetTop,  29.0, 29.0);
+    [ imageButton setImage:[UIImage imageNamed:@"www/map-close-button.png"] forState:UIControlStateNormal];
+    [ imageButton setFrame:frame];
+    [ imageButton addTarget:self action:@selector(closeButton:) forControlEvents:UIControlEventTouchUpInside];
+  }
 
-	
-	[ imageButton setImage:[UIImage imageNamed:@"www/map-close-button.png"] forState:UIControlStateNormal];
-	[ imageButton setFrame:frame];
-	[ imageButton addTarget:self action:@selector(closeButton:) forControlEvents:UIControlEventTouchUpInside];
-
-
+  // calculate map display
+	CGRect webViewBounds = webView.bounds;
+  CGFloat height = webViewBounds.size.height - offsetTop - offsetBottom;
+	CGRect mapBounds = CGRectMake(webViewBounds.origin.x,
+                                webViewBounds.origin.y + offsetTop,
+                                webViewBounds.size.width,
+                                height);
+	[childView setFrame:webViewBounds];
+	[mapView setFrame:mapBounds];
+  
+  // show either all annotations OR show a centered lat/lon with diameter
+  MKCoordinateRegion region;
+  if (showAllAnnotations && [mapView.annotations count] > 0)
+  {
+    CLLocationCoordinate2D topLeftCoord;
+    topLeftCoord.latitude = -90;
+    topLeftCoord.longitude = 180;
+    
+    CLLocationCoordinate2D bottomRightCoord;
+    bottomRightCoord.latitude = 90;
+    bottomRightCoord.longitude = -180;
+    
+    for(PGAnnotation* annotation in mapView.annotations)
+    {
+      topLeftCoord.longitude = fmin(topLeftCoord.longitude, annotation.coordinate.longitude);
+      topLeftCoord.latitude = fmax(topLeftCoord.latitude, annotation.coordinate.latitude);
+      
+      bottomRightCoord.longitude = fmax(bottomRightCoord.longitude, annotation.coordinate.longitude);
+      bottomRightCoord.latitude = fmin(bottomRightCoord.latitude, annotation.coordinate.latitude);
+    }
+    region.center.latitude = topLeftCoord.latitude - (topLeftCoord.latitude - bottomRightCoord.latitude) * 0.5;
+    region.center.longitude = topLeftCoord.longitude + (bottomRightCoord.longitude - topLeftCoord.longitude) * 0.5;
+    region.span.latitudeDelta = fabs(topLeftCoord.latitude - bottomRightCoord.latitude) * 1.2; // Add a little extra space on the sides
+    region.span.longitudeDelta = fabs(bottomRightCoord.longitude - topLeftCoord.longitude) * 1.2; // Add a little extra space on the sides
+    region = [mapView regionThatFits:region];
+  }
+  else 
+  {
+    CLLocationCoordinate2D centerCoord = { [[options objectForKey:@"lat"] floatValue] , [[options objectForKey:@"lon"] floatValue] };
+    region=[ mapView regionThatFits: MKCoordinateRegionMakeWithDistance(centerCoord, 
+                                                                        diameter*(height / webViewBounds.size.width), 
+                                                                        diameter*(height / webViewBounds.size.width))];
+  }
+  [mapView setRegion:region animated:YES];
 }
 
-- (void) closeButton:(id)button
+- (void)closeButton:(id)button
 {
 	[ self hideMap:NULL withDict:NULL];
 	NSString* jsString = [NSString stringWithFormat:@"%@(\"%i\");", self.buttonCallback,-1];
@@ -190,7 +214,7 @@
 
 - (void)hideMap:(NSMutableArray*)arguments withDict:(NSMutableDictionary*)options
 {
-    if (!mapView || childView.hidden==YES) 
+  if (!mapView || childView.hidden==YES) 
 	{
 		return;
 	}
@@ -199,11 +223,12 @@
 	childView.hidden = YES;
 }
 
-- (MKAnnotationView *) mapView:(MKMapView *)theMapView viewForAnnotation:(id <MKAnnotation>) annotation{
-	
-	if ([annotation class] != PGAnnotation.class) {
-        return nil;
-    }
+- (MKAnnotationView *) mapView:(MKMapView *)theMapView viewForAnnotation:(id <MKAnnotation>) annotation
+{
+	if ([annotation class] != PGAnnotation.class)
+  {
+    return nil;
+  }
 	
 	PGAnnotation *phAnnotation=(PGAnnotation *) annotation;
 	NSString *identifier=[NSString stringWithFormat:@"INDEX[%i]", phAnnotation.index];
@@ -238,10 +263,8 @@
 	
 	annView.leftCalloutAccessoryView = asyncImage;
 
-	
 	if (self.buttonCallback && phAnnotation.index!=-1)
 	{
-		
 		UIButton *myDetailButton = [UIButton buttonWithType:UIButtonTypeDetailDisclosure];
 		myDetailButton.frame = CGRectMake(0, 0, 23, 23);
 		myDetailButton.contentVerticalAlignment = UIControlContentVerticalAlignmentCenter;
@@ -249,7 +272,6 @@
 		myDetailButton.tag=phAnnotation.index;
 		annView.rightCalloutAccessoryView = myDetailButton;
 		[ myDetailButton addTarget:self action:@selector(checkButtonTapped:) forControlEvents:UIControlEventTouchUpInside];
-		
 	}
 	
 	if(phAnnotation.selected)
@@ -263,10 +285,9 @@
 -(void)openAnnotation:(id <MKAnnotation>) annotation
 {
 	[ mapView selectAnnotation:annotation animated:YES];  
-	
 }
 
-- (void) checkButtonTapped:(id)button 
+- (void)checkButtonTapped:(id)button 
 {
 	UIButton *tmpButton = button;
 	NSString* jsString = [NSString stringWithFormat:@"%@(\"%i\");", self.buttonCallback, tmpButton.tag];

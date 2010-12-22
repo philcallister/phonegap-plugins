@@ -74,7 +74,7 @@
 	}
 	
 	//make an image view for the image
-	UIImageView* imageView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"icon.png"]] autorelease];
+	UIImageView* imageView = [[[UIImageView alloc] initWithImage:[UIImage imageNamed:@"icon-pin.png"]] autorelease];
 	//make sizing choices based on your needs, experiment with these. maybe not all the calls below are needed.
 	imageView.contentMode = UIViewContentModeScaleAspectFit;
 	imageView.autoresizingMask = ( UIViewAutoresizingFlexibleWidth || UIViewAutoresizingFlexibleHeight );
