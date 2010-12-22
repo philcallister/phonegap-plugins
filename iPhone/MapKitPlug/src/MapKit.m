@@ -151,11 +151,12 @@
   // calculate map display
 	CGRect webViewBounds = webView.bounds;
   CGFloat height = webViewBounds.size.height - offsetTop - offsetBottom;
-	CGRect mapBounds = CGRectMake(webViewBounds.origin.x,
-                                webViewBounds.origin.y + offsetTop,
-                                webViewBounds.size.width,
-                                height);
-	[childView setFrame:webViewBounds];
+	CGRect childBounds = CGRectMake(webViewBounds.origin.x,
+                                  webViewBounds.origin.y + offsetTop,
+                                  webViewBounds.size.width,
+                                  height);
+  CGRect mapBounds = CGRectMake(0.0, 0.0, webViewBounds.size.width, height);
+	[childView setFrame:childBounds];
 	[mapView setFrame:mapBounds];
   
   // show either all annotations OR show a centered lat/lon with diameter
