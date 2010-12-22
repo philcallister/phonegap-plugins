@@ -130,10 +130,12 @@
 		NSString *pinColor=[[pinData valueForKey:@"pinColor"] description];
 		NSInteger index=[[pinData valueForKey:@"index"] integerValue];
 		BOOL selected = [[pinData valueForKey:@"selected"] boolValue];
+    BOOL clickable = [[pinData valueForKey:@"clickable"] boolValue];
 
 		PGAnnotation *annotation = [[PGAnnotation alloc] initWithCoordinate:pinCoord index:index title:title subTitle:subTitle imageURL:imageURL];
 		annotation.pinColor=pinColor;
 		annotation.selected = selected;
+    annotation.clickable = clickable;
 
 		[mapView addAnnotation:annotation];
 		[annotation release];
@@ -264,7 +266,7 @@
 	
 	annView.leftCalloutAccessoryView = asyncImage;
 
-	if (self.buttonCallback && phAnnotation.index!=-1)
+	if (self.buttonCallback && phAnnotation.clickable)
 	{
 		UIButton *myDetailButton = [UIButton buttonWithType:UIButtonTypeDetailDisclosure];
 		myDetailButton.frame = CGRectMake(0, 0, 23, 23);

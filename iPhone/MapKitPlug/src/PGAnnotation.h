@@ -20,6 +20,7 @@
 	MKPlacemark *_placemark;
 	NSString *pinColor;
 	bool selected;
+  bool clickable;
 }
 
 @property (nonatomic, retain) NSString *title;
@@ -30,6 +31,7 @@
 @property (nonatomic) CLLocationCoordinate2D coordinate;
 @property (nonatomic, retain) NSString *pinColor;
 @property (nonatomic, assign) bool selected;
+@property (nonatomic, assign) bool clickable;
 
 - (void)notifyCalloutInfo:(MKPlacemark *)placemark;
 - (id)initWithCoordinate:(CLLocationCoordinate2D)coordinate index:(NSInteger)index title:(NSString*)title subTitle:(NSString*)subTitle imageURL:(NSString*)imageURL;

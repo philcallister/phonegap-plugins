@@ -28,6 +28,7 @@ MapKitPlug.Pin = function()
 //	this.title = 
 //	this.pinColor = 
 //	this.index = 
+//  this.clickable =
 //  this.imageURL =
 //	this.selected = false;
 	

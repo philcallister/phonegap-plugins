@@ -18,6 +18,7 @@
 @synthesize	coordinate = _coordinate;
 @synthesize	pinColor;
 @synthesize selected;
+@synthesize clickable;
 
 - (id)initWithCoordinate:(CLLocationCoordinate2D)coordinate index:(NSInteger)index title:(NSString*)title subTitle:(NSString*)subTitle imageURL:(NSString*)imageURL {
     if ((self = [super init])) {
