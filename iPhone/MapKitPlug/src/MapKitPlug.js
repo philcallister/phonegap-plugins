@@ -9,14 +9,15 @@ function MapKitPlug()
 {
 	this.options = 
 	{
-		// Default options 
-		"buttonCallback": "window.plugins.mapKit.onMapCallback",
-		"height":460,
-		"diameter":1000,
-		"atBottom":true,
+		// Default options
+    "buttonClose"   :true, // show a close button?
+		"buttonCallback": "window.plugins.mapKit.onMapCallback", // callback on annotation click
+		"diameter"      :1000, // diameter in meters (0: display map showing ALL pins)
+    "offsetTop"     :0, // pixel offset from top
+    "offsetBottom"  :0, // pixel offset from bottom
 		// ( nitobi HQ, if you have issues, send missles here )
-		"lat":49.281468,
-		"lon":-123.104446
+		"lat"           :49.281468, // lat/lon for center of map (ignored when diameter is 0) 
+		"lon"           :-123.104446
 	};
 }
 
@@ -27,6 +28,7 @@ MapKitPlug.Pin = function()
 //	this.title = 
 //	this.pinColor = 
 //	this.index = 
+//  this.imageURL =
 //	this.selected = false;
 	
 };
@@ -54,16 +56,19 @@ MapKitPlug.Pin = function()
  
  */
 
-
 MapKitPlug.prototype.onMapCallback = function(pindex)
 {
 	alert("You selected pin : " + pindex);
 };
 
-
 MapKitPlug.prototype.showMap = function()
 {
 	PhoneGap.exec("MapKitView.showMap");
+};
+
+MapKitPlug.prototype.hideMap = function() 
+{
+	PhoneGap.exec("MapKitView.hideMap", {});
 };
 
 /*
@@ -98,11 +103,6 @@ MapKitPlug.prototype.setMapData = function(pins,options)
 	PhoneGap.exec("MapKitView.setMapData",pinStr , this.options);
 };
 
-MapKitPlug.prototype.hideMap = function() 
-{
-	PhoneGap.exec("MapKitView.hideMap", {});
-};
-
 // Coming Soon!!
 //MapKitPlug.prototype.destroyMap = function()
 //{
@@ -117,6 +117,4 @@ MapKitPlug.install = function()
 	}
 	window.plugins.mapKit = new MapKitPlug();
 };
-
 PhoneGap.addConstructor(MapKitPlug.install);
-
