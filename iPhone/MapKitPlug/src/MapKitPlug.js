@@ -10,6 +10,7 @@ function MapKitPlug()
 	this.options = 
 	{
 		// Default options
+    "firstPinCurrentLocation": false, // is the first pin the user's current location?
     "buttonClose"   :true, // show a close button?
 		"buttonCallback": "window.plugins.mapKit.onMapCallback", // callback on annotation click
 		"diameter"      :1000, // diameter in meters (0: display map showing ALL pins)
@@ -26,6 +27,7 @@ MapKitPlug.Pin = function()
 //	this.lat = 
 //	this.lon = 
 //	this.title = 
+//  this.subTitle =
 //	this.pinColor = 
 //	this.index = 
 //  this.clickable =
@@ -64,7 +66,7 @@ MapKitPlug.prototype.onMapCallback = function(pindex)
 
 MapKitPlug.prototype.showMap = function()
 {
-	PhoneGap.exec("MapKitView.showMap");
+	PhoneGap.exec("MapKitView.showMap", {});
 };
 
 MapKitPlug.prototype.hideMap = function() 
@@ -84,7 +86,7 @@ MapKitPlug.prototype.hideMap = function()
  }; 
 */
 
-MapKitPlug.prototype.setMapData = function(pins,options)
+MapKitPlug.prototype.setMapData = function(pins, options)
 {
 	for(var v in options)
 	{
@@ -95,13 +97,12 @@ MapKitPlug.prototype.setMapData = function(pins,options)
 	}
 	
 	var pinStr = "[]";
-	
 	if(pins)
 	{
 		pinStr = JSON.stringify(pins);
 	}
 	
-	PhoneGap.exec("MapKitView.setMapData",pinStr , this.options);
+	PhoneGap.exec("MapKitView.setMapData", pinStr, this.options);
 };
 
 // Coming Soon!!

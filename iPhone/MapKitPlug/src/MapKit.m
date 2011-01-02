@@ -84,7 +84,12 @@
 	{
 		[mapView removeAnnotations:mapView.annotations];
 	}
-	
+  // current location option - a bit of hackery here.  Instead of waiting
+  // for the current location to become available, we'll just pass it in as
+  // the 1st pin, since we can get it from PhoneGap.  This 1st pin will then
+  // be used to calculate the map region.
+  // TODO: Don't pass as a pin.  Instead, calculate here. 
+  BOOL currentLocation = NO;
   // offset from top
   CGFloat offsetTop = 0.0f;
   // offset from bottom
@@ -94,6 +99,10 @@
   // show all annotations
   BOOL showAllAnnotations = NO;
 	
+  if ([options objectForKey:@"firstPinCurrentLocation"])
+  {
+    currentLocation=[[options objectForKey:@"firstPinCurrentLocation"] boolValue];
+  }
 	if ([options objectForKey:@"buttonCallback"])
 	{
 		self.buttonCallback=[[options objectForKey:@"buttonCallback"] description];
@@ -117,6 +126,7 @@
   }
 	
   // add annotations
+  PGAnnotation *currentLocationAnnotation = nil;
   NSArray *pins = [[NSArray alloc] init];
 	SBJSON *parser=[[SBJSON alloc] init];
 	pins = [parser objectWithString:[arguments objectAtIndex:0]];
@@ -137,8 +147,15 @@
 		annotation.selected = selected;
     annotation.clickable = clickable;
 
-		[mapView addAnnotation:annotation];
-		[annotation release];
+    if (y == 0 && currentLocation == YES)
+    {
+      currentLocationAnnotation = annotation;
+    }
+    else
+    {
+      [mapView addAnnotation:annotation];
+      [annotation release];
+    }
 	}
 	
   // show map close button?
@@ -177,15 +194,23 @@
     {
       topLeftCoord.longitude = fmin(topLeftCoord.longitude, annotation.coordinate.longitude);
       topLeftCoord.latitude = fmax(topLeftCoord.latitude, annotation.coordinate.latitude);
-      
       bottomRightCoord.longitude = fmax(bottomRightCoord.longitude, annotation.coordinate.longitude);
       bottomRightCoord.latitude = fmin(bottomRightCoord.latitude, annotation.coordinate.latitude);
+    }
+    // include user's current location in calculation
+    if (currentLocation == YES && currentLocationAnnotation != nil)
+    {
+      topLeftCoord.longitude = fmin(topLeftCoord.longitude, currentLocationAnnotation.coordinate.longitude);
+      topLeftCoord.latitude = fmax(topLeftCoord.latitude, currentLocationAnnotation.coordinate.latitude);
+      bottomRightCoord.longitude = fmax(bottomRightCoord.longitude, currentLocationAnnotation.coordinate.longitude);
+      bottomRightCoord.latitude = fmin(bottomRightCoord.latitude, currentLocationAnnotation.coordinate.latitude);
     }
     region.center.latitude = topLeftCoord.latitude - (topLeftCoord.latitude - bottomRightCoord.latitude) * 0.5;
     region.center.longitude = topLeftCoord.longitude + (bottomRightCoord.longitude - topLeftCoord.longitude) * 0.5;
     region.span.latitudeDelta = fabs(topLeftCoord.latitude - bottomRightCoord.latitude) * 1.2; // Add a little extra space on the sides
     region.span.longitudeDelta = fabs(bottomRightCoord.longitude - topLeftCoord.longitude) * 1.2; // Add a little extra space on the sides
     region = [mapView regionThatFits:region];
+    
   }
   else 
   {
@@ -194,6 +219,13 @@
                                                                         diameter*(height / webViewBounds.size.width), 
                                                                         diameter*(height / webViewBounds.size.width))];
   }
+  
+  // 1st annotation being used for current location.  Remove this annotation
+  // now that we've calculated the region with it.
+  if (currentLocationAnnotation != nil)
+  {
+    [currentLocationAnnotation release];
+  }  
   [mapView setRegion:region animated:YES];
 }
 
